@@ -75,3 +75,58 @@ export function versesToSlides(verses, perSlide = 2) {
   }
   return slides;
 }
+
+// Abreviações em português que diferem do id usado nos arquivos (ids no estilo gn, jud, 1kgs...)
+const PT_ABBREV = {
+  jz: 'jud', '1rs': '1kgs', '2rs': '2kgs', '1cr': '1ch', '2cr': '2ch', ed: 'ezr',
+  sl: 'ps', pv: 'prv', ct: 'so', os: 'ho', mq: 'mi', hc: 'hk', sf: 'zp', ag: 'hg',
+  mc: 'mk', lc: 'lk', at: 'act', ef: 'eph', fp: 'ph', fm: 'phm', tg: 'jm', ap: 're',
+};
+
+// Procura o livro pelo texto digitado, na ordem: nome exato (com acento, para separar
+// "Jó" de "João"), abreviação em português, id do arquivo, nome sem acento e início do nome.
+function findBookByText(bible, text) {
+  const raw = String(text).trim().toLowerCase();
+  const q = normalize(text);
+  const compact = q.replace(/ /g, '');
+
+  const byRawName = bible.books.find((b) => b.name.toLowerCase() === raw);
+  if (byRawName) return byRawName;
+
+  const abbrevId = PT_ABBREV[compact];
+  if (abbrevId) {
+    const b = bible.books.find((x) => x.id === abbrevId);
+    if (b) return b;
+  }
+
+  const byId = bible.books.find((b) => normalize(b.id) === compact);
+  if (byId) return byId;
+
+  const byName = bible.books.filter((b) => normalize(b.name) === q);
+  if (byName.length === 1) return byName[0];
+
+  const starts = bible.books.filter((b) => normalize(b.name).startsWith(q));
+  return starts.length === 1 ? starts[0] : null;
+}
+
+// Interpreta uma referência digitada, como "Jo 3:16", "joao 3 16" ou "1 co 13".
+// Retorna { bookId, chapter, verse } ou lança erro com mensagem clara.
+export function parseReference(bible, text) {
+  const match = String(text || '')
+    .trim()
+    .match(/^(.+?)\s+(\d+)(?:\s*[:.,\s]\s*(\d+))?$/);
+  if (!match) throw new Error('Use o formato "Livro capítulo:versículo", por exemplo Jo 3:16.');
+
+  const found = findBookByText(bible, match[1]);
+  if (!found) throw new Error(`Não encontrei o livro "${match[1]}".`);
+
+  const chapter = Number(match[2]);
+  if (chapter < 1 || chapter > found.chapters.length) {
+    throw new Error(`${found.name} tem ${found.chapters.length} capítulos.`);
+  }
+  const verse = match[3] ? Number(match[3]) : 1;
+  if (verse < 1 || verse > found.chapters[chapter - 1].length) {
+    throw new Error(`${found.name} ${chapter} tem ${found.chapters[chapter - 1].length} versículos.`);
+  }
+  return { bookId: found.id, chapter, verse };
+}

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -8,7 +8,7 @@ let projectionWin = null;
 
 // Músicas ficam na pasta de dados do usuário, para persistir entre execuções
 const songsFile = () => path.join(app.getPath('userData'), 'songs.json');
-// Bíblias: arquivos JSON na pasta de dados do usuário (importados) ou embutidos no app
+// Bíblias: na pasta de dados do usuário (importadas) ou embutidas no app
 const userBibleDir = () => path.join(app.getPath('userData'), 'bible');
 const bundledBibleDir = () =>
   app.isPackaged
@@ -23,17 +23,26 @@ function loadUrl(win, hash = '') {
   }
 }
 
+function sendToControl(channel, payload) {
+  if (controlWin && !controlWin.isDestroyed()) controlWin.webContents.send(channel, payload);
+}
+
 function createControlWindow() {
   controlWin = new BrowserWindow({
-    width: 1100,
-    height: 720,
-    title: 'Projeção Igreja: painel',
+    width: 1240,
+    height: 800,
+    minWidth: 960,
+    minHeight: 640,
+    title: 'Projeção Igreja',
+    autoHideMenuBar: true,
+    backgroundColor: '#0f172a',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+  controlWin.setMenuBarVisibility(false);
   loadUrl(controlWin);
   controlWin.on('closed', () => {
     controlWin = null;
@@ -41,34 +50,57 @@ function createControlWindow() {
   });
 }
 
-// Abre a janela de projeção no monitor externo, se existir, senão no principal
+// Abre a janela de projeção: sem barra de menus, em tela cheia no monitor externo
 function openProjection() {
   if (projectionWin) {
     projectionWin.focus();
     return;
   }
-  const displays = screen.getAllDisplays();
   const primary = screen.getPrimaryDisplay();
-  const external = displays.find((d) => d.id !== primary.id) || primary;
+  const external = screen.getAllDisplays().find((d) => d.id !== primary.id);
+  const target = external || primary;
 
-  projectionWin = new BrowserWindow({
-    x: external.bounds.x,
-    y: external.bounds.y,
-    width: external.bounds.width,
-    height: external.bounds.height,
-    fullscreen: external.id !== primary.id,
+  const options = {
     backgroundColor: '#000000',
     title: 'Projeção',
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
-  });
+  };
+
+  if (external) {
+    // Monitor externo: tela cheia, sem moldura
+    Object.assign(options, {
+      x: target.bounds.x,
+      y: target.bounds.y,
+      width: target.bounds.width,
+      height: target.bounds.height,
+      frame: false,
+      fullscreen: true,
+    });
+  } else {
+    // Só um monitor: janela comum para teste (F11 alterna tela cheia)
+    Object.assign(options, { width: 1024, height: 576, frame: true });
+  }
+
+  projectionWin = new BrowserWindow(options);
+  projectionWin.setMenuBarVisibility(false);
   loadUrl(projectionWin, '#projection');
+
+  projectionWin.webContents.on('before-input-event', (_e, input) => {
+    if (input.type === 'keyDown' && input.key === 'F11') {
+      projectionWin.setFullScreen(!projectionWin.isFullScreen());
+    }
+  });
+
   projectionWin.on('closed', () => {
     projectionWin = null;
+    sendToControl('projection:status', false);
   });
+  sendToControl('projection:status', true);
 }
 
 // ---------- IPC ----------
@@ -84,7 +116,6 @@ ipcMain.handle('songs:save', (_e, songs) => {
 });
 
 // Uma tradução pode ser um arquivo único (com "books") ou uma pasta com um arquivo por livro
-// Lista as traduções disponíveis (embutidas + importadas)
 ipcMain.handle('bible:list', () => {
   const roots = [bundledBibleDir(), userBibleDir()].filter((d) => fs.existsSync(d));
   return roots.flatMap((root) =>
@@ -108,7 +139,7 @@ ipcMain.handle('bible:load', (_e, target) => {
     }
     return raw;
   }
-  // Pasta: lê um arquivo por livro, na ordem dos nomes (ex.: 01-gn.json, 02-ex.json)
+  // Pasta: um arquivo por livro, na ordem dos nomes (ex.: 01-gn.json, 02-ex.json)
   const books = fs.readdirSync(target)
     .filter((f) => f.endsWith('.json'))
     .sort()
@@ -118,6 +149,11 @@ ipcMain.handle('bible:load', (_e, target) => {
 
 ipcMain.handle('projection:open', () => {
   openProjection();
+  return true;
+});
+
+ipcMain.handle('projection:close', () => {
+  if (projectionWin) projectionWin.close();
   return true;
 });
 
@@ -131,6 +167,8 @@ ipcMain.on('projection:clear', () => {
 });
 
 app.whenReady().then(() => {
+  // Remove o menu padrão (Arquivo, Editar, Exibir...) de todas as janelas
+  Menu.setApplicationMenu(null);
   createControlWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createControlWindow();

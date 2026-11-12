@@ -5,13 +5,19 @@ contextBridge.exposeInMainWorld('api', {
   loadSongs: () => ipcRenderer.invoke('songs:load'),
   saveSongs: (songs) => ipcRenderer.invoke('songs:save', songs),
   listBibles: () => ipcRenderer.invoke('bible:list'),
-  loadBible: (file) => ipcRenderer.invoke('bible:load', file),
+  loadBible: (target) => ipcRenderer.invoke('bible:load', target),
   openProjection: () => ipcRenderer.invoke('projection:open'),
+  closeProjection: () => ipcRenderer.invoke('projection:close'),
   showSlide: (slide) => ipcRenderer.send('projection:show', slide),
   clearSlide: () => ipcRenderer.send('projection:clear'),
   onSlide: (callback) => {
     const listener = (_e, slide) => callback(slide);
     ipcRenderer.on('projection:slide', listener);
     return () => ipcRenderer.removeListener('projection:slide', listener);
+  },
+  onProjectionStatus: (callback) => {
+    const listener = (_e, open) => callback(open);
+    ipcRenderer.on('projection:status', listener);
+    return () => ipcRenderer.removeListener('projection:status', listener);
   },
 });

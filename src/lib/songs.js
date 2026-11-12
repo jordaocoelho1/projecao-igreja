@@ -33,10 +33,22 @@ export function parseOrder(text, verses) {
   return valid.length ? valid : Object.keys(verses);
 }
 
+// Nomes amigáveis para os rótulos mais comuns
+export function labelName(label) {
+  const l = String(label).toUpperCase();
+  if (l === 'R') return 'Refrão';
+  if (l.startsWith('R') && /^R\d+$/.test(l)) return `Refrão ${l.slice(1)}`;
+  if (/^V\d+$/.test(l)) return `Verso ${l.slice(1)}`;
+  if (l === 'P' || l === 'B') return 'Ponte';
+  return label;
+}
+
 // Gera a lista de slides da música, na ordem definida
 export function songToSlides(song) {
-  return song.order.map((label) => ({
-    title: `${song.title} · ${label}`,
+  return song.order.map((label, i) => ({
+    id: `${song.id}-${i}`,
+    label: labelName(label),
+    title: `${song.title} · ${labelName(label)}`,
     body: song.verses[label] || '',
   }));
 }
