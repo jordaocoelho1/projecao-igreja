@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import BibleBrowser from './components/BibleBrowser.jsx';
 import SongsPanel from './components/SongsPanel.jsx';
+import Appearance from './components/Appearance.jsx';
+import SlideView from './components/SlideView.jsx';
+import { DEFAULT_SETTINGS } from './lib/themes.js';
+import { useMedia } from './lib/useMedia.js';
 
 export default function App() {
   const [tab, setTab] = useState('biblia');
@@ -8,10 +12,13 @@ export default function App() {
   const [bibles, setBibles] = useState([]);
   const [current, setCurrent] = useState(null);
   const [projectionOpen, setProjectionOpen] = useState(false);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const media = useMedia(settings);
 
   useEffect(() => {
     window.api.loadSongs().then(setSongs);
     window.api.listBibles().then(setBibles);
+    window.api.loadSettings().then((s) => setSettings({ ...DEFAULT_SETTINGS, ...s }));
     return window.api.onProjectionStatus(setProjectionOpen);
   }, []);
 
@@ -42,6 +49,12 @@ export default function App() {
     });
   }
 
+  function changeSettings(patch) {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    window.api.saveSettings(next);
+  }
+
   function show(slide) {
     setCurrent(slide);
     window.api.showSlide(slide);
@@ -59,6 +72,7 @@ export default function App() {
         <nav className="tabs">
           <button className={tab === 'biblia' ? 'tab active' : 'tab'} onClick={() => setTab('biblia')}>📖 Bíblia</button>
           <button className={tab === 'musicas' ? 'tab active' : 'tab'} onClick={() => setTab('musicas')}>🎵 Músicas</button>
+          <button className={tab === 'aparencia' ? 'tab active' : 'tab'} onClick={() => setTab('aparencia')}>🎨 Aparência</button>
         </nav>
       </header>
 
@@ -73,20 +87,12 @@ export default function App() {
             currentId={current?.id}
           />
         )}
+        {tab === 'aparencia' && <Appearance settings={settings} media={media} onChange={changeSettings} />}
       </main>
 
       <aside className="screen-panel">
         <h3>Na tela agora</h3>
-        <div className="preview">
-          {current ? (
-            <>
-              <div className="preview-body">{current.body}</div>
-              <div className="preview-title">{current.title}</div>
-            </>
-          ) : (
-            <div className="preview-empty">Tela limpa</div>
-          )}
-        </div>
+        <div className="preview"><SlideView slide={current} settings={settings} media={media} /></div>
         <button className="danger big" onClick={clear}>Limpar tela (Esc)</button>
         <div className="status">
           <span className={projectionOpen ? 'dot on' : 'dot'} />

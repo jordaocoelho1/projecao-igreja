@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, screen, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -159,6 +159,58 @@ ipcMain.handle('lyrics:search', async (_e, query) => {
     .filter((r) => r.plainLyrics)
     .slice(0, 15)
     .map((r) => ({ id: r.id, title: r.trackName, artist: r.artistName, album: r.albumName, lyrics: r.plainLyrics }));
+});
+
+// ---------- Aparência (tela de descanso e tema dos slides) ----------
+const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
+const mediaDir = () => path.join(app.getPath('userData'), 'media');
+const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.bmp': 'image/bmp', '.gif': 'image/gif' };
+
+ipcMain.handle('settings:load', () => {
+  try { return JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); } catch { return {}; }
+});
+
+ipcMain.handle('settings:save', (_e, settings) => {
+  fs.writeFileSync(settingsFile(), JSON.stringify(settings, null, 2), 'utf8');
+  if (projectionWin) projectionWin.webContents.send('settings:changed', settings);
+  return true;
+});
+
+// Escolhe uma imagem e guarda uma cópia na pasta do app (continua funcionando se o original for apagado)
+ipcMain.handle('media:pick', async () => {
+  const r = await dialog.showOpenDialog(controlWin, {
+    title: 'Escolher imagem',
+    properties: ['openFile'],
+    filters: [{ name: 'Imagens', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] }],
+  });
+  if (r.canceled || !r.filePaths[0]) return null;
+  fs.mkdirSync(mediaDir(), { recursive: true });
+  const ext = path.extname(r.filePaths[0]).toLowerCase();
+  const dest = path.join(mediaDir(), `${Date.now()}${ext}`);
+  fs.copyFileSync(r.filePaths[0], dest);
+  return dest;
+});
+
+// Devolve a imagem como data URL. "wallpaper" = papel de parede atual do Windows
+ipcMain.handle('media:data', (_e, which) => {
+  let file = which;
+  let mime;
+  if (which === 'wallpaper') {
+    const themes = path.join(process.env.APPDATA || '', 'Microsoft', 'Windows', 'Themes');
+    file = path.join(themes, 'TranscodedWallpaper');
+    if (!fs.existsSync(file)) {
+      const cached = path.join(themes, 'CachedFiles');
+      const first = fs.existsSync(cached) ? fs.readdirSync(cached).find((f) => /\.(jpe?g|png)$/i.test(f)) : null;
+      if (!first) return null;
+      file = path.join(cached, first);
+    }
+    mime = 'image/jpeg';
+  } else {
+    // só permite ler arquivos da pasta de mídia do app
+    if (!file || path.dirname(file) !== mediaDir() || !fs.existsSync(file)) return null;
+    mime = MIME[path.extname(file).toLowerCase()] || 'image/jpeg';
+  }
+  return `data:${mime};base64,${fs.readFileSync(file).toString('base64')}`;
 });
 
 ipcMain.handle('projection:open', () => {

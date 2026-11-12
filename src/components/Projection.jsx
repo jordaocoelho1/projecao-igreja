@@ -1,34 +1,24 @@
 import { useEffect, useState } from 'react';
+import SlideView from './SlideView.jsx';
+import { DEFAULT_SETTINGS } from '../lib/themes.js';
+import { useMedia } from '../lib/useMedia.js';
 
-// Ajusta o tamanho da letra conforme a quantidade de texto, para sempre caber na tela
-function sizeFor(text) {
-  const lines = text.split('\n').length;
-  const score = Math.max(text.length, lines * 38);
-  if (score > 420) return 4.6;
-  if (score > 320) return 5.2;
-  if (score > 230) return 6;
-  if (score > 140) return 7;
-  if (score > 80) return 8;
-  return 9;
-}
-
-// Tela que vai para o projetor: fundo preto, texto grande e centralizado
+// Tela que vai para o projetor
 export default function Projection() {
   const [slide, setSlide] = useState(null);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const media = useMedia(settings);
 
   useEffect(() => {
-    const off = window.api.onSlide(setSlide);
-    return off;
+    window.api.loadSettings().then((s) => setSettings({ ...DEFAULT_SETTINGS, ...s }));
+    const offSlide = window.api.onSlide(setSlide);
+    const offSettings = window.api.onSettings((s) => setSettings({ ...DEFAULT_SETTINGS, ...s }));
+    return () => { offSlide(); offSettings(); };
   }, []);
-
-  if (!slide) return <div className="projection blank" />;
 
   return (
     <div className="projection">
-      <div className="projection-body" style={{ fontSize: `${sizeFor(slide.body)}vmin` }}>
-        {slide.body}
-      </div>
-      {slide.title && <div className="projection-title">{slide.title}</div>}
+      <SlideView slide={slide} settings={settings} media={media} />
     </div>
   );
 }
