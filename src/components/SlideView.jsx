@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { THEMES, FONTS } from '../lib/themes.js';
 
 // Tamanho da letra (em % do menor lado da área), conforme a quantidade de texto
@@ -12,10 +13,35 @@ function sizeFor(text) {
   return 9;
 }
 
-// Desenha um slide (ou a tela de descanso). Usado na projeção e nas pré-visualizações.
+// Desenha um slide (texto, imagem, tela preta) ou a tela de descanso.
+// Usado na projeção e em todas as pré-visualizações, para ficarem iguais.
 export default function SlideView({ slide, settings, media }) {
+  const [imageUrl, setImageUrl] = useState(null);
+  const imagePath = slide?.image || null;
+
+  useEffect(() => {
+    let cancelled = false;
+    setImageUrl(null);
+    if (imagePath) {
+      window.api.mediaData(imagePath).then((u) => { if (!cancelled) setImageUrl(u); }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+  }, [imagePath]);
+
+  if (slide?.black) return <div className="slideview" style={{ background: '#000' }} />;
+
+  if (imagePath) {
+    return (
+      <div
+        className="slideview"
+        style={{ background: imageUrl ? `#000 center / contain no-repeat url("${imageUrl}")` : '#000' }}
+      />
+    );
+  }
+
   const theme = THEMES[settings.themeId] || THEMES.classico;
   const font = FONTS[settings.fontFamily] || FONTS.sans;
+  const scale = settings.fontScale || 1;
 
   let background;
   let overlay = null;
@@ -33,9 +59,13 @@ export default function SlideView({ slide, settings, media }) {
       {overlay && <div className="slideview-overlay" style={{ background: overlay }} />}
       {slide && (
         <div className="slideview-content" style={{ color: theme.text, fontFamily: font.css }}>
-          <div className="slideview-body" style={{ fontSize: `${sizeFor(slide.body)}cqmin` }}>{slide.body}</div>
+          {slide.body && (
+            <div className="slideview-body" style={{ fontSize: `${sizeFor(slide.body) * scale}cqmin` }}>{slide.body}</div>
+          )}
           {settings.showTitle && slide.title && (
-            <div className="slideview-title" style={{ color: theme.title }}>{slide.title}</div>
+            <div className="slideview-title" style={{ color: theme.title, fontSize: `${3.4 * scale}cqmin` }}>
+              {slide.title}
+            </div>
           )}
         </div>
       )}

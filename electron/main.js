@@ -35,6 +35,7 @@ function createControlWindow() {
     minWidth: 960,
     minHeight: 640,
     title: 'Projeção Igreja',
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     autoHideMenuBar: true,
     backgroundColor: '#0f172a',
     webPreferences: {
@@ -45,6 +46,19 @@ function createControlWindow() {
   });
   controlWin.setMenuBarVisibility(false);
   loadUrl(controlWin);
+  // Evita fechar o programa sem querer no meio do culto
+  controlWin.on('close', (e) => {
+    if (!projectionWin) return;
+    const choice = dialog.showMessageBoxSync(controlWin, {
+      type: 'question',
+      buttons: ['Cancelar', 'Fechar mesmo assim'],
+      defaultId: 0,
+      cancelId: 0,
+      title: 'Fechar o programa?',
+      message: 'A projeção está aberta. Fechar o programa vai apagar a tela do projetor.',
+    });
+    if (choice === 0) e.preventDefault();
+  });
   controlWin.on('closed', () => {
     controlWin = null;
     if (projectionWin) projectionWin.close();
@@ -213,6 +227,50 @@ ipcMain.handle('media:data', (_e, which) => {
   }
   return `data:${mime};base64,${fs.readFileSync(file).toString('base64')}`;
 });
+
+// ---------- Culto planejado ----------
+const serviceFile = () => path.join(app.getPath('userData'), 'service.json');
+
+ipcMain.handle('service:load', () => {
+  try { return JSON.parse(fs.readFileSync(serviceFile(), 'utf8')); } catch { return []; }
+});
+
+ipcMain.handle('service:save', (_e, items) => {
+  fs.writeFileSync(serviceFile(), JSON.stringify(items, null, 2), 'utf8');
+  return true;
+});
+
+// ---------- Backup e importação de músicas ----------
+ipcMain.handle('songs:export', async (_e, songs) => {
+  const date = new Date().toISOString().slice(0, 10);
+  const r = await dialog.showSaveDialog(controlWin, {
+    title: 'Salvar backup das músicas',
+    defaultPath: `musicas-backup-${date}.json`,
+    filters: [{ name: 'Backup de músicas', extensions: ['json'] }],
+  });
+  if (r.canceled || !r.filePath) return null;
+  fs.writeFileSync(r.filePath, JSON.stringify({ app: 'projecao-igreja', version: 1, songs }, null, 2), 'utf8');
+  return r.filePath;
+});
+
+ipcMain.handle('songs:import-files', async () => {
+  const r = await dialog.showOpenDialog(controlWin, {
+    title: 'Importar músicas',
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      { name: 'Músicas (TXT, OpenLyrics/OpenLP, backup)', extensions: ['txt', 'xml', 'json'] },
+    ],
+  });
+  if (r.canceled) return [];
+  return r.filePaths.map((f) => ({
+    name: path.basename(f),
+    ext: path.extname(f).toLowerCase(),
+    content: fs.readFileSync(f, 'utf8'),
+  }));
+});
+
+// A projeção avisa quando terminou de carregar; o painel reenvia o slide atual
+ipcMain.on('projection:ready', () => sendToControl('projection:ready'));
 
 ipcMain.handle('projection:open', () => {
   openProjection();

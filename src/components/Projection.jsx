@@ -13,6 +13,8 @@ export default function Projection() {
     window.api.loadSettings().then((s) => setSettings({ ...DEFAULT_SETTINGS, ...s }));
     const offSlide = window.api.onSlide(setSlide);
     const offSettings = window.api.onSettings((s) => setSettings({ ...DEFAULT_SETTINGS, ...s }));
+    // Avisa o painel que a projeção abriu, para ele reenviar o que deve estar na tela
+    window.api.projectionReady();
     return () => { offSlide(); offSettings(); };
   }, []);
 

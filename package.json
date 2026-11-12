@@ -1,6 +1,6 @@
 {
   "name": "projecao-igreja",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Projeção de versículos e letras para culto",
   "main": "electron/main.js",
   "private": true,
@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "start": "npm run build && electron .",
-    "dist": "npm run build && electron-builder --win --publish never"
+    "dist": "npm run build && electron-builder --win --publish never",
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -18,14 +19,38 @@
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3",
-    "vite": "^5.4.0"
+    "jsdom": "^25.0.1",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.9"
   },
   "build": {
     "appId": "br.igreja.projecao",
     "productName": "Projeção Igreja",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*", "electron/**/*", "data/**/*"],
-    "extraResources": [{ "from": "data/bible", "to": "bible" }],
-    "win": { "target": "nsis" }
-  }
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "data/bible",
+        "to": "bible"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "artifactName": "Projecao-Igreja-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Projeção Igreja"
+    }
+  },
+  "author": "Jordão"
 }

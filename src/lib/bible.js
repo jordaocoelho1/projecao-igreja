@@ -1,12 +1,10 @@
 // Carregamento e busca de versículos.
 //
-// Formato de cada livro (um arquivo por livro, dentro da pasta da tradução):
-// { id, name, chapters: [[ "versículo 1", "versículo 2", ... ], ...] }
-//
-// O app junta os livros da pasta numa tradução: { name, books: [...] }.
+// Formato de cada livro: { id, name, chapters: [[ "versículo 1", "versículo 2", ... ], ...] }
+// Uma tradução é { name, books: [...] }.
 // Se um arquivo licenciado vier com outra estrutura, ajuste só a função adaptBible().
 
-const normalize = (s) =>
+export const normalize = (s) =>
   String(s || '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -15,7 +13,6 @@ const normalize = (s) =>
     .trim();
 
 // Ponto de adaptação: valida a tradução e converte para o formato interno.
-// Se a fonte licenciada tiver outra estrutura, faça a conversão aqui.
 export function adaptBible(translation) {
   if (!translation || !Array.isArray(translation.books)) {
     throw new Error('Tradução fora do formato esperado (faltou "books").');
@@ -30,50 +27,51 @@ export function adaptBible(translation) {
 
 export function findBook(bible, query) {
   const q = normalize(query);
-  return bible.books.find(
-    (b) => normalize(b.name) === q || normalize(b.id) === q
-  );
+  return bible.books.find((b) => normalize(b.name) === q || normalize(b.id) === q);
 }
 
-// Retorna uma lista de { reference, text } para o intervalo pedido.
-// Ex.: getVerses(bible, 'João', 3, 16)      -> [{ reference: 'João 3:16', ... }]
-//      getVerses(bible, 'João', 3, 16, 18)  -> três versículos
+// Retorna [{ reference, text }] para o intervalo pedido.
 export function getVerses(bible, bookQuery, chapter, fromVerse, toVerse = fromVerse) {
   const book = findBook(bible, bookQuery);
   if (!book) throw new Error(`Livro não encontrado: ${bookQuery}`);
-
-  const chapters = book.chapters;
-  if (chapter < 1 || chapter > chapters.length) {
-    throw new Error(`${book.name} tem ${chapters.length} capítulos.`);
+  if (chapter < 1 || chapter > book.chapters.length) {
+    throw new Error(`${book.name} tem ${book.chapters.length} capítulos.`);
   }
-  const verses = chapters[chapter - 1];
+  const verses = book.chapters[chapter - 1];
   if (fromVerse < 1 || toVerse > verses.length || fromVerse > toVerse) {
     throw new Error(`${book.name} ${chapter} tem ${verses.length} versículos.`);
   }
-
   const out = [];
   for (let v = fromVerse; v <= toVerse; v++) {
-    out.push({
-      reference: `${book.name} ${chapter}:${v}`,
-      text: verses[v - 1],
-    });
+    out.push({ reference: `${book.name} ${chapter}:${v}`, text: verses[v - 1] });
   }
   return out;
 }
 
-// Quebra a lista em slides de no máximo `perSlide` versículos, para caber na tela
-export function versesToSlides(verses, perSlide = 2) {
-  const slides = [];
-  for (let i = 0; i < verses.length; i += perSlide) {
-    const group = verses.slice(i, i + perSlide);
-    slides.push({
-      title: group.length > 1
-        ? `${group[0].reference} – ${group[group.length - 1].reference.split(' ').pop()}`
-        : group[0].reference,
-      body: group.map((v) => v.text).join(' '),
-    });
+// Um slide com `perSlide` versículos a partir do versículo n
+export function verseSlide(book, chapter, n, perSlide = 1) {
+  const list = book.chapters[chapter - 1] || [];
+  const group = list.slice(n - 1, n - 1 + perSlide);
+  const last = n + group.length - 1;
+  return {
+    id: `b-${book.id}-${chapter}-${n}-${group.length}`,
+    title: `${book.name} ${chapter}:${group.length > 1 ? `${n}-${last}` : n}`,
+    body: group.join(' '),
+    ref: { bookId: book.id, chapter, verse: n, perSlide },
+  };
+}
+
+// Slides de um trecho: { bookId, chapter, from, to (opcional = fim do capítulo), perSlide }
+export function rangeSlides(bible, { bookId, chapter, from = 1, to, perSlide = 1 }) {
+  const book = bible?.books.find((b) => b.id === bookId);
+  if (!book) return [];
+  const list = book.chapters[chapter - 1] || [];
+  const end = Math.min(to || list.length, list.length);
+  const out = [];
+  for (let n = from; n <= end; n += perSlide) {
+    out.push(verseSlide(book, chapter, n, Math.min(perSlide, end - n + 1)));
   }
-  return slides;
+  return out;
 }
 
 // Abreviações em português que diferem do id usado nos arquivos (ids no estilo gn, jud, 1kgs...)
@@ -83,9 +81,9 @@ const PT_ABBREV = {
   mc: 'mk', lc: 'lk', at: 'act', ef: 'eph', fp: 'ph', fm: 'phm', tg: 'jm', ap: 're',
 };
 
-// Procura o livro pelo texto digitado, na ordem: nome exato (com acento, para separar
-// "Jó" de "João"), abreviação em português, id do arquivo, nome sem acento e início do nome.
-function findBookByText(bible, text) {
+// Procura o livro pelo texto digitado: nome exato (com acento, para separar "Jó" de "João"),
+// abreviação em português, id do arquivo, nome sem acento e início do nome.
+export function findBookByText(bible, text) {
   const raw = String(text).trim().toLowerCase();
   const q = normalize(text);
   const compact = q.replace(/ /g, '');
@@ -109,12 +107,13 @@ function findBookByText(bible, text) {
   return starts.length === 1 ? starts[0] : null;
 }
 
-// Interpreta uma referência digitada, como "Jo 3:16", "joao 3 16" ou "1 co 13".
-// Retorna { bookId, chapter, verse } ou lança erro com mensagem clara.
+// Interpreta "Jo 3:16", "joao 3 16", "1 co 13" ou "Jo 3:16-18".
+// Retorna { bookId, chapter, verse, to } — `to` é null quando não foi pedido intervalo
+// e `verse` só vem preenchido de verdade quando foi digitado (senão é 1 e hasVerse = false).
 export function parseReference(bible, text) {
   const match = String(text || '')
     .trim()
-    .match(/^(.+?)\s+(\d+)(?:\s*[:.,\s]\s*(\d+))?$/);
+    .match(/^(.+?)\s+(\d+)(?:\s*[:.,\s]\s*(\d+)(?:\s*-\s*(\d+))?)?$/);
   if (!match) throw new Error('Use o formato "Livro capítulo:versículo", por exemplo Jo 3:16.');
 
   const found = findBookByText(bible, match[1]);
@@ -124,9 +123,23 @@ export function parseReference(bible, text) {
   if (chapter < 1 || chapter > found.chapters.length) {
     throw new Error(`${found.name} tem ${found.chapters.length} capítulos.`);
   }
+  const count = found.chapters[chapter - 1].length;
   const verse = match[3] ? Number(match[3]) : 1;
-  if (verse < 1 || verse > found.chapters[chapter - 1].length) {
-    throw new Error(`${found.name} ${chapter} tem ${found.chapters[chapter - 1].length} versículos.`);
+  if (verse < 1 || verse > count) {
+    throw new Error(`${found.name} ${chapter} tem ${count} versículos.`);
   }
-  return { bookId: found.id, chapter, verse };
+  let to = null;
+  if (match[4]) {
+    to = Number(match[4]);
+    if (to < verse || to > count) throw new Error(`Intervalo inválido: ${found.name} ${chapter} tem ${count} versículos.`);
+  }
+  return { bookId: found.id, chapter, verse, to, hasVerse: Boolean(match[3]) };
+}
+
+// Texto curto para mostrar um trecho: "João 3:16-18" ou "Salmos 23"
+export function rangeLabel(bible, { bookId, chapter, from, to }) {
+  const book = bible?.books.find((b) => b.id === bookId);
+  const name = book ? book.name : bookId;
+  if (!from && !to) return `${name} ${chapter}`;
+  return `${name} ${chapter}:${from}${to && to > from ? `-${to}` : ''}`;
 }

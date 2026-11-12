@@ -20,4 +20,8 @@ export const DEFAULT_SETTINGS = {
   showTitle: true,
   slideBgImage: null,
   overlay: 0.55,
+  fontScale: 1,
 };
+
+export const FONT_SCALE_MIN = 0.6;
+export const FONT_SCALE_MAX = 1.6;

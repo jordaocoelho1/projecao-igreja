@@ -16,6 +16,16 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('settings:changed', listener);
     return () => ipcRenderer.removeListener('settings:changed', listener);
   },
+  loadService: () => ipcRenderer.invoke('service:load'),
+  saveService: (items) => ipcRenderer.invoke('service:save', items),
+  exportSongs: (songs) => ipcRenderer.invoke('songs:export', songs),
+  importSongFiles: () => ipcRenderer.invoke('songs:import-files'),
+  projectionReady: () => ipcRenderer.send('projection:ready'),
+  onProjectionReady: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('projection:ready', listener);
+    return () => ipcRenderer.removeListener('projection:ready', listener);
+  },
   openProjection: () => ipcRenderer.invoke('projection:open'),
   closeProjection: () => ipcRenderer.invoke('projection:close'),
   showSlide: (slide) => ipcRenderer.send('projection:show', slide),
