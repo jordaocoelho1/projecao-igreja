@@ -23,6 +23,7 @@
   "build": {
     "appId": "br.igreja.projecao",
     "productName": "Projeção Igreja",
+    "directories": { "output": "release" },
     "files": ["dist/**/*", "electron/**/*", "data/**/*"],
     "extraResources": [{ "from": "data/bible", "to": "bible" }],
     "win": { "target": "nsis" }
