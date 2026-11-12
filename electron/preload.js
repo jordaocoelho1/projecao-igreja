@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   saveSongs: (songs) => ipcRenderer.invoke('songs:save', songs),
   listBibles: () => ipcRenderer.invoke('bible:list'),
   loadBible: (target) => ipcRenderer.invoke('bible:load', target),
+  searchLyrics: (q) => ipcRenderer.invoke('lyrics:search', q),
   openProjection: () => ipcRenderer.invoke('projection:open'),
   closeProjection: () => ipcRenderer.invoke('projection:close'),
   showSlide: (slide) => ipcRenderer.send('projection:show', slide),

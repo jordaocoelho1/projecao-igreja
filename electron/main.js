@@ -147,6 +147,20 @@ ipcMain.handle('bible:load', (_e, target) => {
   return { name: path.basename(target), books };
 });
 
+// Busca de letras no LRCLIB (API pública). Feita no processo principal para evitar bloqueio de CORS.
+ipcMain.handle('lyrics:search', async (_e, query) => {
+  const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`, {
+    headers: { 'User-Agent': 'projecao-igreja/0.1.0' },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`Serviço de letras respondeu ${res.status}`);
+  const list = await res.json();
+  return list
+    .filter((r) => r.plainLyrics)
+    .slice(0, 15)
+    .map((r) => ({ id: r.id, title: r.trackName, artist: r.artistName, album: r.albumName, lyrics: r.plainLyrics }));
+});
+
 ipcMain.handle('projection:open', () => {
   openProjection();
   return true;

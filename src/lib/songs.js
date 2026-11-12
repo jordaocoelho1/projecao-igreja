@@ -61,3 +61,28 @@ export const emptySong = () => ({
   verses: {},
   order: [],
 });
+
+// Converte letra simples (estrofes separadas por linha em branco) em partes [V1], [R]...
+// Estrofes idênticas que se repetem viram o refrão.
+export function lyricsToParts(plain) {
+  const stanzas = String(plain || '').replace(/\r/g, '').split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  const key = (t) => t.toLowerCase().replace(/\s+/g, ' ');
+  const counts = {};
+  stanzas.forEach((t) => { counts[key(t)] = (counts[key(t)] || 0) + 1; });
+  const labels = {};
+  const verses = {};
+  const order = [];
+  let v = 0;
+  let r = 0;
+  for (const t of stanzas) {
+    const k = key(t);
+    if (!labels[k]) {
+      if (counts[k] > 1) { r += 1; labels[k] = r === 1 ? 'R' : `R${r}`; }
+      else { v += 1; labels[k] = `V${v}`; }
+      verses[labels[k]] = t;
+    }
+    order.push(labels[k]);
+  }
+  const text = Object.entries(verses).map(([l, b]) => `[${l}]\n${b}`).join('\n\n');
+  return { text, order: order.join(', ') };
+}
