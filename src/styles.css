@@ -1,0 +1,36 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+
+.app { padding: 16px; max-width: 1000px; margin: 0 auto; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+nav { display: flex; gap: 8px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+
+button { padding: 8px 14px; border: 0; border-radius: 6px; background: #2b5cad; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: default; }
+button.ghost { background: #e0e0e0; color: #222; }
+button.active { background: #1a3d7a; }
+button.chip { background: #dfe9fb; color: #1a3d7a; }
+
+input, select, textarea { padding: 8px; border: 1px solid #bbb; border-radius: 6px; font: inherit; }
+textarea { width: 100%; font-family: ui-monospace, monospace; }
+label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 14px; }
+
+.editor { background: #fff; padding: 16px; border-radius: 8px; }
+.list { list-style: none; padding: 0; margin: 12px 0; }
+.list li { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
+.list li.clickable { cursor: pointer; }
+.list li.clickable:hover { background: #eef3ff; }
+
+.preview { background: #000; color: #fff; min-height: 220px; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.preview-title { color: #9bb8ef; margin-bottom: 12px; }
+.preview-body { font-size: 28px; white-space: pre-line; }
+
+.muted { color: #888; font-size: 14px; }
+.error { color: #b00020; }
+
+/* Janela de projeção */
+.projection { position: fixed; inset: 0; background: #000; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5vw; text-align: center; }
+.projection.blank { background: #000; }
+.projection-body { font-size: 6vw; line-height: 1.35; white-space: pre-line; }
+.projection-title { margin-top: 3vh; font-size: 2.2vw; color: #9bb8ef; }

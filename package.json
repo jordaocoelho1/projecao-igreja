@@ -1,0 +1,30 @@
+{
+  "name": "projecao-igreja",
+  "version": "0.1.0",
+  "description": "Projeção de versículos e letras para culto",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.4.0"
+  },
+  "build": {
+    "appId": "br.igreja.projecao",
+    "productName": "Projeção Igreja",
+    "files": ["dist/**/*", "electron/**/*", "data/**/*"],
+    "extraResources": [{ "from": "data/bible", "to": "bible" }],
+    "win": { "target": "nsis" }
+  }
+}
