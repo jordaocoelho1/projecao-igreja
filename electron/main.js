@@ -2,7 +2,8 @@ const { app, BrowserWindow, Menu, ipcMain, screen, dialog } = require('electron'
 const path = require('path');
 const fs = require('fs');
 
-const isDev = !app.isPackaged;
+// Só usa o servidor do Vite se pedirem explicitamente (VITE_DEV=1). No `npm start` carrega o dist.
+const isDev = !app.isPackaged && process.env.VITE_DEV === '1';
 let controlWin = null;
 let projectionWin = null;
 
