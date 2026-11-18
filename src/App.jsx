@@ -5,6 +5,7 @@ import SongsPanel from './components/SongsPanel.jsx';
 import ServicePanel from './components/ServicePanel.jsx';
 import Appearance from './components/Appearance.jsx';
 import SlideView from './components/SlideView.jsx';
+import ConfirmHost from './components/ConfirmHost.jsx';
 import { DEFAULT_SETTINGS, FONT_SCALE_MAX, FONT_SCALE_MIN } from './lib/themes.js';
 import { useMedia } from './lib/useMedia.js';
 import { adaptBible } from './lib/bible.js';
@@ -253,6 +254,7 @@ export default function App() {
         </p>
       </aside>
 
+      <ConfirmHost />
       {toast && <div className={`toast ${toast.kind}`}>{toast.message}</div>}
     </div>
   );

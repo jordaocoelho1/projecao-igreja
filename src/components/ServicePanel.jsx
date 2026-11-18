@@ -4,6 +4,7 @@ import SlideView from './SlideView.jsx';
 import { songToSlides } from '../lib/songs.js';
 import { parseReference, rangeLabel, rangeSlides } from '../lib/bible.js';
 import { useArrowKeys } from '../lib/useArrowKeys.js';
+import { ask } from '../lib/confirm.js';
 
 const ICONS = { song: '🎵', bible: '📖', text: '📝', image: '🖼' };
 
@@ -203,7 +204,7 @@ export default function ServicePanel({ service, onChange, songs, bible, settings
           <div className="panel-head">
             <h2>Ordem do culto</h2>
             {service.length > 0 && (
-              <button className="link" onClick={() => { if (confirm('Apagar toda a ordem do culto?')) { update([]); setSelected(0); } }}>
+              <button className="link" onClick={async () => { if (await ask('Apagar toda a ordem do culto?', { danger: true, okLabel: 'Apagar tudo' })) { update([]); setSelected(0); setTextForm(null); } }}>
                 limpar tudo
               </button>
             )}

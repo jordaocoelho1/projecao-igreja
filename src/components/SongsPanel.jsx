@@ -3,6 +3,7 @@ import Field from './Field.jsx';
 import SongEditor from './SongEditor.jsx';
 import { emptySong, songToSlides } from '../lib/songs.js';
 import { useArrowKeys } from '../lib/useArrowKeys.js';
+import { ask } from '../lib/confirm.js';
 
 const normalize = (s) =>
   String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -91,7 +92,7 @@ export default function SongsPanel({ songs, onSaveSong, onDeleteSong, onShow, cu
                 <button className="secondary" onClick={() => setEditing(song)}>Editar</button>
                 <button
                   className="danger"
-                  onClick={() => { if (confirm(`Excluir “${song.title}”?`)) { onDeleteSong(song.id); setSelectedId(null); } }}
+                  onClick={async () => { if (await ask(`Excluir “${song.title}”?`, { danger: true, okLabel: 'Excluir' })) { onDeleteSong(song.id); setSelectedId(null); } }}
                 >
                   Excluir
                 </button>
