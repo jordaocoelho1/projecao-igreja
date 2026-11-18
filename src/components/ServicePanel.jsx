@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import Field from './Field.jsx';
+import Icon from './Icon.jsx';
 import SlideView from './SlideView.jsx';
 import { songToSlides } from '../lib/songs.js';
 import { parseReference, rangeLabel, rangeSlides } from '../lib/bible.js';
 import { useArrowKeys } from '../lib/useArrowKeys.js';
 import { ask } from '../lib/confirm.js';
 
-const ICONS = { song: '🎵', bible: '📖', text: '📝', image: '🖼' };
+const ICONS = { song: 'music', bible: 'bible', text: 'text', image: 'image' };
 
 // Slides de um item do culto
 function itemSlides(item, songs, bible) {
@@ -175,8 +176,8 @@ export default function ServicePanel({ service, onChange, songs, bible, settings
         </Field>
         <Field label="Outros">
           <div className="row nowrap">
-            <button className="secondary" onClick={() => setTextForm({ title: '', body: '' })}>📝 Texto / aviso</button>
-            <button className="secondary" onClick={addImage}>🖼 Imagem</button>
+            <button className="secondary" onClick={() => setTextForm({ title: '', body: '' })}><Icon name="text" /> Texto / aviso</button>
+            <button className="secondary" onClick={addImage}><Icon name="image" /> Imagem</button>
           </div>
         </Field>
       </div>
@@ -220,15 +221,15 @@ export default function ServicePanel({ service, onChange, songs, bible, settings
                 <li key={it.id} className={`service-item ${i === sel ? 'active' : ''} ${isLive ? 'live' : ''}`}>
                   <button className="service-main" onClick={() => setSelected(i)}>
                     <span className="service-n">{i + 1}</span>
-                    <span>{ICONS[it.type]}</span>
+                    <Icon name={ICONS[it.type]} className="type-ic" />
                     <span className={broken ? 'muted' : ''}>{itemName(it, songs, bible)}</span>
                     {isLive && <span className="badge">no ar</span>}
                   </button>
                   <div className="service-actions">
-                    {it.type === 'text' && <button className="icon" title="Editar" onClick={() => setTextForm({ id: it.id, title: it.title, body: it.body })}>✎</button>}
-                    <button className="icon" title="Subir" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
-                    <button className="icon" title="Descer" onClick={() => move(i, 1)} disabled={i === service.length - 1}>↓</button>
-                    <button className="icon" title="Remover" onClick={() => remove(i)}>✕</button>
+                    {it.type === 'text' && <button className="icon" title="Editar" onClick={() => setTextForm({ id: it.id, title: it.title, body: it.body })}><Icon name="edit" size={16} /></button>}
+                    <button className="icon" title="Subir" onClick={() => move(i, -1)} disabled={i === 0}><Icon name="up" size={16} /></button>
+                    <button className="icon" title="Descer" onClick={() => move(i, 1)} disabled={i === service.length - 1}><Icon name="down" size={16} /></button>
+                    <button className="icon" title="Remover" onClick={() => remove(i)}><Icon name="close" size={16} /></button>
                   </div>
                 </li>
               );
@@ -242,10 +243,10 @@ export default function ServicePanel({ service, onChange, songs, bible, settings
           ) : (
             <>
               <div className="panel-head">
-                <h2>{ICONS[item.type]} {itemName(item, songs, bible)}</h2>
+                <h2 className="with-ic"><Icon name={ICONS[item.type]} size={20} /> {itemName(item, songs, bible)}</h2>
                 <div className="row">
-                  <button className="secondary" onClick={() => step(-1)}>◀ Anterior</button>
-                  <button onClick={() => step(1)}>Próximo ▶</button>
+                  <button className="secondary" onClick={() => step(-1)}><Icon name="prev" /> Anterior</button>
+                  <button onClick={() => step(1)}>Próximo <Icon name="next" /></button>
                 </div>
               </div>
               <p className="hint">Clique num slide para projetar. As setas ← → seguem para o próximo item do culto automaticamente.</p>

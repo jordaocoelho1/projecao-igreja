@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Field from './Field.jsx';
+import Icon from './Icon.jsx';
 import { labelName, lyricsToParts, parseVerses } from '../lib/songs.js';
 import { ask } from '../lib/confirm.js';
 
@@ -137,7 +138,7 @@ export default function SongEditor({ song, onSave, onCancel }) {
       <section className="panel stack">
         <div className="panel-head">
           <h3 className="step"><span>2</span> Letra</h3>
-          <button className="secondary small" onClick={() => setShowPaste((v) => !v)}>📋 Colar letra inteira</button>
+          <button className="secondary small" onClick={() => setShowPaste((v) => !v)}><Icon name="paste" /> Colar letra inteira</button>
         </div>
 
         <div className="search-box stack">
@@ -185,7 +186,7 @@ export default function SongEditor({ song, onSave, onCancel }) {
                   {KINDS.map((k) => <option key={k.prefix} value={k.prefix}>{k.name}</option>)}
                 </select>
                 <span className="grow" />
-                <button className="icon" title="Remover parte" onClick={() => removePart(p)}>✕</button>
+                <button className="icon" title="Remover parte" onClick={() => removePart(p)}><Icon name="close" size={16} /></button>
               </div>
               <textarea
                 id={`part-${p.id}`}
@@ -226,9 +227,9 @@ export default function SongEditor({ song, onSave, onCancel }) {
                 <span className="order-n">{pos + 1}</span>
                 <strong>{labelName(p.label)}</strong>
                 <span className="order-preview">{p.text.split('\n')[0]}</span>
-                <button className="icon" title="Mover para antes" onClick={() => moveInSequence(pos, -1)} disabled={pos === 0}>↑</button>
-                <button className="icon" title="Mover para depois" onClick={() => moveInSequence(pos, 1)} disabled={pos === sequence.length - 1}>↓</button>
-                <button className="icon" title="Tirar da sequência" onClick={() => setSequence((s) => s.filter((_, k) => k !== pos))}>✕</button>
+                <button className="icon" title="Mover para antes" onClick={() => moveInSequence(pos, -1)} disabled={pos === 0}><Icon name="up" size={16} /></button>
+                <button className="icon" title="Mover para depois" onClick={() => moveInSequence(pos, 1)} disabled={pos === sequence.length - 1}><Icon name="down" size={16} /></button>
+                <button className="icon" title="Tirar da sequência" onClick={() => setSequence((s) => s.filter((_, k) => k !== pos))}><Icon name="close" size={16} /></button>
               </li>
             );
           })}

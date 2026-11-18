@@ -5,6 +5,7 @@ import SongsPanel from './components/SongsPanel.jsx';
 import ServicePanel from './components/ServicePanel.jsx';
 import Appearance from './components/Appearance.jsx';
 import SlideView from './components/SlideView.jsx';
+import Icon from './components/Icon.jsx';
 import ConfirmHost from './components/ConfirmHost.jsx';
 import { DEFAULT_SETTINGS, FONT_SCALE_MAX, FONT_SCALE_MIN } from './lib/themes.js';
 import { useMedia } from './lib/useMedia.js';
@@ -153,10 +154,10 @@ export default function App() {
   }
 
   const tabs = [
-    ['culto', '📋 Culto'],
-    ['biblia', '📖 Bíblia'],
-    ['musicas', '🎵 Músicas'],
-    ['aparencia', '🎨 Aparência'],
+    ['culto', 'Culto', 'service'],
+    ['biblia', 'Bíblia', 'bible'],
+    ['musicas', 'Músicas', 'music'],
+    ['aparencia', 'Aparência', 'palette'],
   ];
 
   return (
@@ -164,8 +165,8 @@ export default function App() {
       <header className="topbar">
         <div className="brand">Projeção Igreja <span className="version">v{pkg.version}</span></div>
         <nav className="tabs">
-          {tabs.map(([id, label]) => (
-            <button key={id} className={tab === id ? 'tab active' : 'tab'} onClick={() => setTab(id)}>{label}</button>
+          {tabs.map(([id, label, icon]) => (
+            <button key={id} className={tab === id ? 'tab active' : 'tab'} onClick={() => setTab(id)}><Icon name={icon} size={19} /><span>{label}</span></button>
           ))}
         </nav>
       </header>
@@ -215,8 +216,8 @@ export default function App() {
         <div className={`preview ${frozen ? 'frozen' : ''}`}>
           <SlideView slide={onScreen} settings={settings} media={media} />
         </div>
-        {frozen && <div className="notice">❄ Tela congelada: o que você clicar não vai para a projeção até descongelar.</div>}
-        {blackout && !frozen && <div className="notice">■ Tela preta ligada.</div>}
+        {frozen && <div className="notice">Tela congelada: o que você clicar não vai para a projeção até descongelar.</div>}
+        {blackout && !frozen && <div className="notice">Tela preta ligada.</div>}
 
         <div className="control-grid">
           <button className="secondary" onClick={clear}>Limpar <kbd>Esc</kbd></button>

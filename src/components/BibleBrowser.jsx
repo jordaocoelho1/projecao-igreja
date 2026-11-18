@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Field from './Field.jsx';
+import Icon from './Icon.jsx';
 import { parseReference, verseSlide } from '../lib/bible.js';
 import { store } from '../lib/storage.js';
 import { useArrowKeys } from '../lib/useArrowKeys.js';
@@ -161,13 +162,13 @@ export default function BibleBrowser({ bibles, translation, onTranslation, bible
               <h2>{book.name} {chapter}</h2>
               <div className="row">
                 <button className="secondary" onClick={toggleFavorite} disabled={lo == null} title="Favoritar o versículo selecionado">
-                  {isFavorite ? '★ Favorito' : '☆ Favoritar'}
+                  <Icon name="star" filled={isFavorite} /> {isFavorite ? 'Favorito' : 'Favoritar'}
                 </button>
                 <button className="secondary" onClick={addSelection} disabled={lo == null}>
                   + Adicionar ao culto{lo != null ? ` (${lo}${hi > lo ? `-${hi}` : ''})` : ''}
                 </button>
-                <button className="secondary" onClick={() => step(-1)}>◀ Anterior</button>
-                <button onClick={() => step(1)}>Próximo ▶</button>
+                <button className="secondary" onClick={() => step(-1)}><Icon name="prev" /> Anterior</button>
+                <button onClick={() => step(1)}>Próximo <Icon name="next" /></button>
               </div>
             </div>
             <p className="hint">Clique para projetar. Shift + clique seleciona um trecho para adicionar ao culto. Setas ← → avançam.</p>
@@ -189,7 +190,7 @@ export default function BibleBrowser({ bibles, translation, onTranslation, bible
 
           <div className="stack">
             <div className="panel stack">
-              <h3 className="side-title">★ Favoritos</h3>
+              <h3 className="side-title">Favoritos</h3>
               {favorites.length === 0 && <p className="muted">Selecione um versículo e clique em “Favoritar”.</p>}
               <div className="chips">
                 {favorites.map((f) => (

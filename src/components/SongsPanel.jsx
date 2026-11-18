@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import Field from './Field.jsx';
+import Icon from './Icon.jsx';
 import SongEditor from './SongEditor.jsx';
 import { emptySong, songToSlides } from '../lib/songs.js';
 import { useArrowKeys } from '../lib/useArrowKeys.js';
@@ -99,8 +100,8 @@ export default function SongsPanel({ songs, onSaveSong, onDeleteSong, onShow, cu
               </div>
             </div>
             <div className="row">
-              <button className="secondary" onClick={() => step(-1)}>◀ Anterior</button>
-              <button onClick={() => step(1)}>Próxima parte ▶</button>
+              <button className="secondary" onClick={() => step(-1)}><Icon name="prev" /> Anterior</button>
+              <button onClick={() => step(1)}>Próxima parte <Icon name="next" /></button>
               <span className="muted">Atalho: setas ← →</span>
             </div>
             <ol className="slides">
